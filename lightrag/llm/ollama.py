@@ -29,13 +29,13 @@ from lightrag.api import __api_version__
 import numpy as np
 from typing import Union
 from lightrag.utils import logger
-
+from httpx import TimeoutException
 
 @retry(
     stop=stop_after_attempt(3),
     wait=wait_exponential(multiplier=1, min=4, max=10),
     retry=retry_if_exception_type(
-        (RateLimitError, APIConnectionError, APITimeoutError)
+        (RateLimitError, APIConnectionError, APITimeoutError, TimeoutException)
     ),
 )
 async def _ollama_model_if_cache(
@@ -106,6 +106,7 @@ async def _ollama_model_if_cache(
             logger.warning(
                 f"Failed to close Ollama client after exception: {close_error}"
             )
+        logger.debug(e.__dict__)
         raise e
     finally:
         if not stream:
