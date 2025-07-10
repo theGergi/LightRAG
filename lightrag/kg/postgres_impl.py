@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 from typing import Any, Union, final
 import numpy as np
 import configparser
+import json_repair
 
 from lightrag.types import KnowledgeGraph, KnowledgeGraphNode, KnowledgeGraphEdge
 
@@ -1812,7 +1813,17 @@ class PGGraphStorage(BaseGraphStorage):
                     dtype = v.split("::")[-1]
                     v = v.split("::")[0]
                     if dtype == "vertex":
-                        vertex = json.loads(v)
+                        logger.info("_____________!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+                        logger.info(v)
+                        logger.info(record.keys())
+                        try:
+                            vertex = json.loads(v)
+                        except json.JSONDecodeError as e:
+                            vertex = json_repair.loads(v)
+                            logger.info("Encountered broken json")
+                            logger.info(v)
+                            logger.info('JSON was repaired!')
+                            logger.info(json.dumps(vertex))
                         vertices[vertex["id"]] = vertex.get("properties")
 
         # iterate returned fields and parse appropriately
@@ -1822,11 +1833,11 @@ class PGGraphStorage(BaseGraphStorage):
                 if v.startswith("[") and v.endswith("]"):
                     if "::vertex" in v:
                         v = v.replace("::vertex", "")
-                        d[k] = json.loads(v)
+                        d[k] = json_repair.loads(v)
 
                     elif "::edge" in v:
                         v = v.replace("::edge", "")
-                        d[k] = json.loads(v)
+                        d[k] = json_repair.loads(v)
                     else:
                         print("WARNING: unsupported type")
                         continue
@@ -1835,9 +1846,9 @@ class PGGraphStorage(BaseGraphStorage):
                     dtype = v.split("::")[-1]
                     v = v.split("::")[0]
                     if dtype == "vertex":
-                        d[k] = json.loads(v)
+                        d[k] = json_repair.loads(v)
                     elif dtype == "edge":
-                        d[k] = json.loads(v)
+                        d[k] = json_repair.loads(v)
             else:
                 d[k] = v  # Keep as string
 
@@ -2391,7 +2402,7 @@ class PGGraphStorage(BaseGraphStorage):
         edges_dict = {}
 
         for result in forward_results:
-            if result["source"] and result["target"] and result["edge_properties"]:
+            if result["source"] and result["target"] and 'edge_properties' in result.keys() and result["edge_properties"]:
                 edge_props = result["edge_properties"]
 
                 # Process string result, parse it to JSON dictionary
