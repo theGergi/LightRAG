@@ -2309,11 +2309,11 @@ class PGGraphStorage(BaseGraphStorage):
         in_degrees = {}
 
         for result in outgoing_results:
-            if result["node_id"] is not None:
+            if result.get("node_id") is not None:
                 out_degrees[result["node_id"]] = int(result["out_degree"])
 
         for result in incoming_results:
-            if result["node_id"] is not None:
+            if result.get("node_id") is not None:
                 in_degrees[result["node_id"]] = int(result["in_degree"])
 
         degrees_dict = {}
@@ -2402,7 +2402,7 @@ class PGGraphStorage(BaseGraphStorage):
         edges_dict = {}
 
         for result in forward_results:
-            if result["source"] and result["target"] and 'edge_properties' in result.keys() and result["edge_properties"]:
+            if "source" in result.keys() and "target" in result.keys() and result["source"] and result["target"] and 'edge_properties' in result.keys() and result["edge_properties"]:
                 edge_props = result["edge_properties"]
 
                 # Process string result, parse it to JSON dictionary
@@ -2986,9 +2986,9 @@ def namespace_to_table_name(namespace: str) -> str:
 TABLES = {
     "LIGHTRAG_DOC_FULL": {
         "ddl": """CREATE TABLE LIGHTRAG_DOC_FULL (
-                    id VARCHAR(255),
-                    workspace VARCHAR(255),
-                    doc_name VARCHAR(1024),
+                    id TEXT,
+                    workspace TEXT,
+                    doc_name TEXT,
                     content TEXT,
                     meta JSONB,
                     create_time TIMESTAMP(0),
@@ -2998,13 +2998,13 @@ TABLES = {
     },
     "LIGHTRAG_DOC_CHUNKS": {
         "ddl": """CREATE TABLE LIGHTRAG_DOC_CHUNKS (
-                    id VARCHAR(255),
-                    workspace VARCHAR(255),
-                    full_doc_id VARCHAR(256),
+                    id TEXT,
+                    workspace TEXT,
+                    full_doc_id TEXT,
                     chunk_order_index INTEGER,
                     tokens INTEGER,
                     content TEXT,
-                    file_path VARCHAR(256),
+                    file_path TEXT,
                     llm_cache_list JSONB NULL DEFAULT '[]'::jsonb,
                     create_time TIMESTAMP(0) WITH TIME ZONE,
                     update_time TIMESTAMP(0) WITH TIME ZONE,
@@ -3013,14 +3013,14 @@ TABLES = {
     },
     "LIGHTRAG_VDB_CHUNKS": {
         "ddl": """CREATE TABLE LIGHTRAG_VDB_CHUNKS (
-                    id VARCHAR(255),
-                    workspace VARCHAR(255),
-                    full_doc_id VARCHAR(256),
+                    id TEXT,
+                    workspace TEXT,
+                    full_doc_id TEXT,
                     chunk_order_index INTEGER,
                     tokens INTEGER,
                     content TEXT,
                     content_vector VECTOR,
-                    file_path VARCHAR(256),
+                    file_path TEXT,
                     create_time TIMESTAMP(0) WITH TIME ZONE,
                     update_time TIMESTAMP(0) WITH TIME ZONE,
 	                CONSTRAINT LIGHTRAG_VDB_CHUNKS_PK PRIMARY KEY (workspace, id)
@@ -3028,41 +3028,41 @@ TABLES = {
     },
     "LIGHTRAG_VDB_ENTITY": {
         "ddl": """CREATE TABLE LIGHTRAG_VDB_ENTITY (
-                    id VARCHAR(255),
-                    workspace VARCHAR(255),
-                    entity_name VARCHAR(1024),
+                    id TEXT,
+                    workspace TEXT,
+                    entity_name TEXT,
                     content TEXT,
                     content_vector VECTOR,
                     create_time TIMESTAMP(0) WITH TIME ZONE,
                     update_time TIMESTAMP(0) WITH TIME ZONE,
-                    chunk_ids VARCHAR(255)[] NULL,
+                    chunk_ids TEXT[] NULL,
                     file_path TEXT NULL,
 	                CONSTRAINT LIGHTRAG_VDB_ENTITY_PK PRIMARY KEY (workspace, id)
                     )"""
     },
     "LIGHTRAG_VDB_RELATION": {
         "ddl": """CREATE TABLE LIGHTRAG_VDB_RELATION (
-                    id VARCHAR(255),
-                    workspace VARCHAR(255),
-                    source_id VARCHAR(256),
-                    target_id VARCHAR(256),
+                    id TEXT,
+                    workspace TEXT,
+                    source_id TEXT,
+                    target_id TEXT,
                     content TEXT,
                     content_vector VECTOR,
                     create_time TIMESTAMP(0) WITH TIME ZONE,
                     update_time TIMESTAMP(0) WITH TIME ZONE,
-                    chunk_ids VARCHAR(255)[] NULL,
+                    chunk_ids TEXT[] NULL,
                     file_path TEXT NULL,
 	                CONSTRAINT LIGHTRAG_VDB_RELATION_PK PRIMARY KEY (workspace, id)
                     )"""
     },
     "LIGHTRAG_LLM_CACHE": {
         "ddl": """CREATE TABLE LIGHTRAG_LLM_CACHE (
-	                workspace varchar(255) NOT NULL,
-	                id varchar(255) NOT NULL,
-	                mode varchar(32) NOT NULL,
+	                workspace TEXT NOT NULL,
+	                id TEXT NOT NULL,
+	                mode TEXT NOT NULL,
                     original_prompt TEXT,
                     return_value TEXT,
-                    chunk_id VARCHAR(255) NULL,
+                    chunk_id TEXT NULL,
                     create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     update_time TIMESTAMP,
 	                CONSTRAINT LIGHTRAG_LLM_CACHE_PK PRIMARY KEY (workspace, mode, id)
@@ -3070,13 +3070,13 @@ TABLES = {
     },
     "LIGHTRAG_DOC_STATUS": {
         "ddl": """CREATE TABLE LIGHTRAG_DOC_STATUS (
-	               workspace varchar(255) NOT NULL,
-	               id varchar(255) NOT NULL,
+	               workspace TEXT NOT NULL,
+	               id TEXT NOT NULL,
 	               content TEXT NULL,
-	               content_summary varchar(255) NULL,
+	               content_summary TEXT NULL,
 	               content_length int4 NULL,
 	               chunks_count int4 NULL,
-	               status varchar(64) NULL,
+	               status TEXT NULL,
 	               file_path TEXT NULL,
 	               chunks_list JSONB NULL DEFAULT '[]'::jsonb,
 	               created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NULL,
