@@ -1813,9 +1813,9 @@ class PGGraphStorage(BaseGraphStorage):
                     dtype = v.split("::")[-1]
                     v = v.split("::")[0]
                     if dtype == "vertex":
-                        logger.info("_____________!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-                        logger.info(v)
-                        logger.info(record.keys())
+                        # logger.info("_____________!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+                        # logger.info(v)
+                        # logger.info(record.keys())
                         try:
                             vertex = json.loads(v)
                         except json.JSONDecodeError as e:
@@ -3030,7 +3030,7 @@ TABLES = {
         "ddl": """CREATE TABLE LIGHTRAG_VDB_ENTITY (
                     id VARCHAR(255),
                     workspace VARCHAR(255),
-                    entity_name VARCHAR(255),
+                    entity_name VARCHAR(1024),
                     content TEXT,
                     content_vector VECTOR,
                     create_time TIMESTAMP(0) WITH TIME ZONE,
