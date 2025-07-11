@@ -300,6 +300,9 @@ class LightRAG:
         default=float(os.getenv("COSINE_THRESHOLD", 0.2))
     )
 
+
+    vector_only: bool = os.getenv("VECTOR_ONLY", False)
+
     _storages_status: StoragesStatus = field(default=StoragesStatus.NOT_CREATED)
 
     def __post_init__(self):
@@ -1041,13 +1044,16 @@ class LightRAG:
                             # Execute first stage tasks
                             await asyncio.gather(*first_stage_tasks)
 
-                            # Stage 2: Process entity relation graph (after text_chunks are saved)
-                            entity_relation_task = asyncio.create_task(
-                                self._process_entity_relation_graph(
-                                    chunks, pipeline_status, pipeline_status_lock
+                            if not self.vector_only:
+                                # Stage 2: Process entity relation graph (after text_chunks are saved)
+                                entity_relation_task = asyncio.create_task(
+                                    self._process_entity_relation_graph(
+                                        chunks, pipeline_status, pipeline_status_lock
+                                    )
                                 )
-                            )
-                            await entity_relation_task
+                            logger.debug(f'Vector only: {self.vector_only}')
+                            if not self.vector_only and entity_relation_task is not None:
+                                await entity_relation_task
                             file_extraction_stage_ok = True
 
                         except Exception as e:
@@ -1098,21 +1104,22 @@ class LightRAG:
 
                     if file_extraction_stage_ok:
                         try:
-                            # Get chunk_results from entity_relation_task
-                            chunk_results = await entity_relation_task
-                            await merge_nodes_and_edges(
-                                chunk_results=chunk_results,  # result collected from entity_relation_task
-                                knowledge_graph_inst=self.chunk_entity_relation_graph,
-                                entity_vdb=self.entities_vdb,
-                                relationships_vdb=self.relationships_vdb,
-                                global_config=asdict(self),
-                                pipeline_status=pipeline_status,
-                                pipeline_status_lock=pipeline_status_lock,
-                                llm_response_cache=self.llm_response_cache,
-                                current_file_number=current_file_number,
-                                total_files=total_files,
-                                file_path=file_path,
-                            )
+                            if not self.vector_only:
+                                # Get chunk_results from entity_relation_task
+                                chunk_results = await entity_relation_task
+                                await merge_nodes_and_edges(
+                                    chunk_results=chunk_results,  # result collected from entity_relation_task
+                                    knowledge_graph_inst=self.chunk_entity_relation_graph,
+                                    entity_vdb=self.entities_vdb,
+                                    relationships_vdb=self.relationships_vdb,
+                                    global_config=asdict(self),
+                                    pipeline_status=pipeline_status,
+                                    pipeline_status_lock=pipeline_status_lock,
+                                    llm_response_cache=self.llm_response_cache,
+                                    current_file_number=current_file_number,
+                                    total_files=total_files,
+                                    file_path=file_path,
+                                )
 
                             await self.doc_status.upsert(
                                 {
@@ -1502,6 +1509,9 @@ class LightRAG:
         global_config = asdict(self)
         # Save original query for vector search
         param.original_query = query
+
+        if global_config.get('vector_only', False):
+            param.mode = "naive"
 
         if param.mode in ["local", "global", "hybrid", "mix"]:
             response = await kg_query(
