@@ -67,7 +67,7 @@ async def _ollama_model_if_cache(
         if system_prompt:
             messages.append({"role": "system", "content": system_prompt})
         messages.extend(history_messages)
-        messages.append({"role": "user", "content": prompt})
+        messages.append({"role": "user", "content": prompt, "options": {"num_ctx": 32768}})
 
         response = await ollama_client.chat(model=model, messages=messages, **kwargs)
         if stream:
@@ -155,10 +155,10 @@ async def ollama_embed(texts: list[str], embed_model, **kwargs) -> np.ndarray:
     host = kwargs.pop("host", None)
     timeout = kwargs.pop("timeout", None) or 300  # Default time out 300s
 
-    ollama_client = ollama.AsyncClient(host=host, timeout=timeout, headers=headers)
+    ollama_client = ollama.AsyncClient(host=host, timeout=None, headers=headers)
 
     try:
-        data = await ollama_client.embed(model=embed_model, input=texts)
+        data = await ollama_client.embed(model=embed_model, input=texts, options={"num_ctx": 8000})
         return np.array(data["embeddings"])
     except Exception as e:
         logger.error(f"Error in ollama_embed: {str(e)}")
